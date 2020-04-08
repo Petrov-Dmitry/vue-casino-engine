@@ -10,6 +10,8 @@ Vue.config.productionTip = false;
 Vue.use(VueCookies);
 Vue.$cookies.config("30d");
 
+console.log(process.env);
+
 window.vm = new Vue({
   router,
   store,

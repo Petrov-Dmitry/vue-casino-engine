@@ -8,8 +8,9 @@ import "./app_modules/registerServiceWorker";
 import { i18n } from "./app_modules/i18n";
 import "./app_modules/uuid";
 import "./app_modules/axios";
+import "./app_modules/vueBus";
+import "./app_modules/vueMeta";
 
-Vue.config.productionTip = false;
 window.vm = new Vue({
   router,
   store,

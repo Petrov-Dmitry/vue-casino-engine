@@ -1,23 +1,16 @@
 import axios from "axios-jsonp-pro";
 
 export default {
-  name: "translations",
+  name: "cmsSettings",
   namespaced: true,
   dataPromise: null,
   state: {
     api: "cms",
-    route: "api/cms/strings/%lang%",
-    batchObjectName: "CmsApiCmsStrings%lang%",
-    lang: window.LANG_CODE || process.env.VUE_APP_DEFAULT_LANGUAGE,
-    data: {},
-    isDataLoading: false,
-    isDataLoaded: {},
+    route: "api/cms/settings",
+    batchObjectName: "CmsApiCmsSettings",
+    data: null,
+    isDataLoaded: new Date("1970/01/02 00:00:00"),
     dataLifetime: 10 * 60 * 1000 // Время жизни загруженных данных - 10 минут в ms
-  },
-  getters: {
-    currentLocaleTranslations(state) {
-      return state.data[state.lang] || {};
-    }
   },
   mutations: {
     setIsDataLoading(state, payload = false) {
@@ -25,49 +18,30 @@ export default {
       state.isDataLoading = payload;
     },
     setData(state, payload) {
-      if (!payload) return;
-      state.data = {
-        ...state.data,
-        ...payload
-      };
+      if (!payload || typeof payload !== "object") return;
       if (window.debugLevel > 10) {
-        console.debug("translations/setData", state.data);
+        console.debug("cmsSettings/setData", state.data, payload);
       }
-    },
-    setTranslations(state, payload = {}) {
-      if (!payload) payload.lang = state.lang;
-      if (this._vm.$i18n.localeExists(payload.lang)) {
-        this._vm.$i18n.replace(
-          payload.lang,
-          this.getters["translations/currentLocaleTranslations"]
-        );
-      } else {
-        this._vm.$i18n.add(
-          payload.lang,
-          this.getters["translations/currentLocaleTranslations"]
-        );
-      }
-      this._vm.$i18n.set(payload.lang);
-      if (window.debugLevel > 10) {
-        console.debug(
-          "translations/setTranslations",
-          payload.lang,
-          this.getters["translations/currentLocaleTranslations"]
-        );
+      const data = {};
+      Object.keys(payload).forEach(key => {
+        data[key] = JSON.parse(payload[key]) || {};
+      });
+      state.data = Object.keys(data).length ? data : null;
+      if (window.debugLevel > 50) {
+        console.debug("cmsSettings/setData data", data);
       }
     }
   },
   actions: {
     fetchData({ state, rootState, commit }, payload = {}) {
       if (!payload.forced) payload.forced = false;
-      if (!payload.lang) payload.lang = state.lang;
       if (window.debugLevel > 10) {
-        console.debug("translations/fetchData", payload, state.data);
+        console.debug("cmsSettings/fetchData", payload, state.data);
       }
       // Возвращаем промис если данные уже грузятся
       if (state.isDataLoading) {
         if (window.debugLevel > 10) {
-          console.debug("translations/fetchData already in progress...");
+          console.debug("cmsSettings/fetchData already in progress...");
         }
         return this.dataPromise;
       }
@@ -75,32 +49,31 @@ export default {
       this.dataPromise = new Promise((resolve, reject) => {
         // Пытаемся получить данные из локального кэша
         if (
-          state.isDataLoaded[payload.lang] &&
+          state.isDataLoaded &&
           !(
-            Date.now() - new Date(state.isDataLoaded[payload.lang]).getTime() >
+            Date.now() - new Date(state.isDataLoaded).getTime() >
             state.dataLifetime
           ) &&
-          state.data[payload.lang] &&
+          state.data &&
           payload.forced === false
         ) {
           if (window.debugLevel > 10) {
             console.debug(
-              "translations/fetchData loaded from CACHE",
-              state.isDataLoaded[payload.lang],
+              "cmsSettings/fetchData loaded from CACHE",
+              state.isDataLoaded,
               state.data
             );
           }
-          commit("setTranslations", { lang: payload.lang });
           return resolve(state.data);
         }
         // Строим запрос к API
         let requestUrl =
           rootState.api.apiPath +
-          state.route.replace("%lang%", payload.lang) +
+          state.route +
           "?requestUUID=" +
           this._vm.$uuid.v1();
         if (window.debugLevel > 10) {
-          console.debug("translations/fetchData requestUrl", requestUrl);
+          console.debug("cmsSettings/fetchData requestUrl", requestUrl);
         }
         // Запрашиваем данные из API
         commit("setIsDataLoading", true);
@@ -110,17 +83,14 @@ export default {
             if (!response.data) {
               throw new Error("translations/fetchData response has no data");
             }
-            const data = {};
-            data[payload.lang] = response.data;
             if (window.debugLevel > 10) {
-              console.debug("translations/fetchData response", response);
+              console.debug("cmsSettings/fetchData response", response);
             }
-            state.isDataLoaded[payload.lang] = new Date();
-            commit("setData", data);
-            commit("setTranslations", { lang: payload.lang });
+            state.isDataLoaded = new Date();
+            commit("setData", response.data);
             if (window.debugLevel > 10) {
               console.debug(
-                "translations/fetchData loaded from API",
+                "cmsSettings/fetchData loaded from API",
                 state.data
               );
             }
@@ -135,7 +105,6 @@ export default {
             this.dataPromise = null;
           });
       });
-      return this.dataPromise;
     }
   }
 };

@@ -35,11 +35,23 @@
 <script>
 export default {
   name: "App",
-  computed: {},
   created() {
     if (window.debugLevel > 1) {
       console.debug("App created!", new Date());
     }
+
+    // Запросим данные модулей, необходимых для запуска приложения
+    this.$store.dispatch("api/batchData", {
+      modules: [
+        "cmsSettings",
+        "currencies",
+        "cmsRoutes",
+        "player",
+        "playerIpInfo",
+        "playerSettings"
+      ]
+    });
+
     // Запросим данные переводов интерфейса
     this.$store.dispatch("translations/fetchData");
   }

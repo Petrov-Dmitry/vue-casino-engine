@@ -9,9 +9,11 @@ import vuexI18n from "vuex-i18n";
 // Импортируем модули store
 import api from "./modules/api";
 import translations from "./modules/translations";
+import cmsSettings from "./modules/cmsSettings";
 // Загружаем модули в store
 const modules = {
   api,
+  cmsSettings,
   translations
 };
 // Загружаем плагины vuex

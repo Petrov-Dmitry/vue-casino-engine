@@ -11,7 +11,7 @@ export default {
     lang: window.LANG_CODE || process.env.VUE_APP_DEFAULT_LANGUAGE,
     data: {},
     isDataLoading: false,
-    isDataLoaded: new Date("1970/01/01 00:00:00"),
+    isDataLoaded: {},
     dataLifetime: 10 * 60 * 1000 // Время жизни загруженных данных - 10 минут в ms
   },
   getters: {
@@ -31,7 +31,7 @@ export default {
         ...payload
       };
       if (window.debugLevel > 10) {
-        console.debug("translations/setData", state.lang, state.data);
+        console.debug("translations/setData", state.data);
       }
       if (this._vm.$i18n.localeExists(state.lang)) {
         this._vm.$i18n.replace(
@@ -48,6 +48,7 @@ export default {
       if (window.debugLevel > 10) {
         console.debug(
           "translations/setData $i18n.translations updated",
+          state.lang,
           this.getters["translations/currentLocaleTranslations"]
         );
       }
@@ -56,6 +57,7 @@ export default {
   actions: {
     fetchData({ state, rootState, commit }, payload = {}) {
       if (!payload.forced) payload.forced = false;
+      if (!payload.lang) payload.lang = state.lang;
       if (window.debugLevel > 10) {
         console.debug("translations/fetchData", payload, state.isDataLoading);
       }
@@ -70,17 +72,21 @@ export default {
       this.dataPromise = new Promise((resolve, reject) => {
         // Пытаемся получить данные из локального кэша
         if (
+          state.isDataLoaded[payload.lang] &&
           !(
-            Date.now() - new Date(state.isDataLoaded).getTime() >
+            Date.now() - new Date(state.isDataLoaded[payload.lang]).getTime() >
             state.dataLifetime
           ) &&
-          state.data[state.lang] &&
+          state.data[payload.lang] &&
           payload.forced === false
         ) {
+          const data = {};
+          data[payload.lang] = state.data[payload.lang];
+          commit("setData", data);
           if (window.debugLevel > 10) {
             console.debug(
               "translations/fetchData loaded from CACHE",
-              state.isDataLoaded,
+              state.isDataLoaded[payload.lang],
               state.data
             );
           }
@@ -90,7 +96,7 @@ export default {
         // Строим запрос к API
         let requestUrl =
           rootState.api.apiPath +
-          state.route.replace("%lang%", state.lang) +
+          state.route.replace("%lang%", payload.lang) +
           "?requestUUID=" +
           this._vm.$uuid.v1();
         if (window.debugLevel > 10) {
@@ -106,14 +112,17 @@ export default {
               throw new Error("translations/fetchData response has no data");
             }
             const data = {};
-            data[state.lang] = response.data;
+            data[payload.lang] = response.data;
             if (window.debugLevel > 10) {
               console.debug("translations/fetchData response", response);
             }
             commit("setData", data);
-            state.isDataLoaded = new Date();
+            state.isDataLoaded[payload.lang] = new Date();
             if (window.debugLevel > 10) {
-              console.debug("translations/fetchData loaded from API", state);
+              console.debug(
+                "translations/fetchData loaded from API",
+                state.data
+              );
             }
             resolve(state.data);
           })

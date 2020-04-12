@@ -1,7 +1,8 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
+      <router-link to="/">Home</router-link>
+      |
       <router-link to="/about">About</router-link>
     </div>
     <router-view />
@@ -30,3 +31,17 @@
   }
 }
 </style>
+
+<script>
+export default {
+  name: "App",
+  computed: {},
+  created() {
+    if (window.debugLevel > 1) {
+      console.debug("App created!", new Date());
+    }
+    // Запросим данные переводов интерфейса
+    this.$store.dispatch("translations/fetchData");
+  }
+};
+</script>

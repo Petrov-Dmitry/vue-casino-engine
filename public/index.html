@@ -6,8 +6,17 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= VUE_APP_TITLE %></title>
-
     <meta name="app-version" content="<%= VUE_APP_VERSION %>">
+
+    <script>
+      <!--#if expr="$upstream_http_x_resolver_urllang" -->
+      window.LANG_CODE = "<!--#echo var='$upstream_http_x_resolver_urllang' default='<%= VUE_APP_DEFAULT_LANGUAGE %>' -->";
+      <!--#else -->
+      const urlParsed = window.location.pathname.match(/^(\/[a-z]{2})?(\/.*)?$/);
+      const urlLang = urlParsed && urlParsed[1] ? urlParsed[1].slice(1, 3) : "";
+      window.LANG_CODE = urlLang || "<%= VUE_APP_DEFAULT_LANGUAGE %>";
+      <!--#endif -->
+    </script>
   </head>
   <body>
     <noscript>

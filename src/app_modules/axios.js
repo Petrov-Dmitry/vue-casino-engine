@@ -10,7 +10,7 @@ Axios.defaults.withCredentials = true;
 Axios.interceptors.response.use(null, err => {
   const { config } = err;
   config.attempts = config.attempts || 1;
-  config.timeout = config.timeout * config.attempts;
+  config.timeout = config.timeout * (config.attempts + 1);
   if (window.debugLevel >= 2)
     console.debug(
       "Axios retry query",
@@ -24,7 +24,7 @@ Axios.interceptors.response.use(null, err => {
   if (
     config &&
     config.method === "get" &&
-    config.attempts <= parseInt(process.env.VUE_APP_API_QUERY_TRYS)
+    config.attempts < parseInt(process.env.VUE_APP_API_QUERY_TRYS)
   ) {
     config.attempts = config.attempts + 1;
     return Axios.request(config);

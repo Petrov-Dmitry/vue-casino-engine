@@ -3,12 +3,9 @@ import VueI18n from "vue-i18n";
 
 Vue.use(VueI18n);
 
-const messages = {
-  en: {},
-  ru: {}
-};
+const messages = {};
 
 export const i18n = new VueI18n({
-  locale: process.env.VUE_APP_DEFAULT_LANGUAGE,
+  locale: window.LANG_CODE || process.env.VUE_APP_DEFAULT_LANGUAGE,
   messages
 });

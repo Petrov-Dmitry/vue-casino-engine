@@ -8,13 +8,23 @@ import vuexI18n from "vuex-i18n";
 
 // Импортируем модули store
 import api from "./modules/api";
-import translations from "./modules/translations";
+import player from "./modules/player";
+import playerIpInfo from "./modules/playerIpInfo";
+import playerSettings from "./modules/playerSettings";
+import cmsTranslations from "./modules/cmsTranslations";
 import cmsSettings from "./modules/cmsSettings";
+import cmsCurrencies from "./modules/cmsCurrencies";
+import cmsRoutes from "./modules/cmsRoutes";
 // Загружаем модули в store
 const modules = {
   api,
+  player,
+  playerIpInfo,
+  playerSettings,
+  cmsTranslations,
   cmsSettings,
-  translations
+  cmsCurrencies,
+  cmsRoutes
 };
 // Загружаем плагины vuex
 const plugins = [];

@@ -1,38 +1,80 @@
 import axios from "axios-jsonp-pro";
 
 export default {
-  name: "cmsSettings",
+  name: "player",
   namespaced: true,
   dataPromise: null,
   state: {
-    api: "cms",
-    route: "api/cms/settings",
-    batchObjectName: "CmsApiCmsSettings",
+    api: "base",
+    route: "api/player",
+    batchObjectName: "BaseApiPlayer",
     data: null,
     isDataLoading: false,
     isDataLoaded: new Date("1970/01/02 00:00:00"),
     dataLifetime: parseInt(process.env.VUE_APP_DATA_LIFETIME)
+  },
+  getters: {
+    showConfirmEmailNotify(state) {
+      return (
+        !state.data &&
+        !state.data.confirmedAt &&
+        !!state.data.id &&
+        Date.now() - (state.data.confirmationEmailSentAt || 0) >
+          parseInt(process.env.VUE_APP_EMAIL_CONFIRMATION_LIFETIME)
+      );
+    },
+    missedEmail(state) {
+      return (
+        state.data &&
+        state.data.authFieldsMissed &&
+        state.data.authFieldsMissed.length &&
+        state.data.authFieldsMissed.includes("email")
+      );
+    },
+    missedCurrency(state) {
+      return (
+        state.data &&
+        state.data.authFieldsMissed &&
+        state.data.authFieldsMissed.length &&
+        state.data.authFieldsMissed.includes("currency")
+      );
+    },
+    isAccountFilled(state) {
+      return Boolean(
+        state.data &&
+          state.data.mobilePhone &&
+          state.data.nickname &&
+          state.data.email &&
+          state.data.currency &&
+          state.data.firstName &&
+          state.data.lastName &&
+          state.data.country &&
+          state.data.dateOfBirth &&
+          state.data.gender
+      );
+    },
+    isTrustedUser(state) {
+      return (
+        state.data &&
+        state.data.statuses &&
+        state.data.statuses.length &&
+        state.data.statuses.find(item => item.id === "trusted_users")
+      );
+    }
   },
   mutations: {
     setIsDataLoading(state, payload = false) {
       payload = !!payload;
       state.isDataLoading = payload;
       if (window.debugLevel > 10) {
-        console.debug("cmsSettings/setDataLoading", state.isDataLoading);
+        console.debug("player/setDataLoading", state.isDataLoading);
       }
     },
     setData(state, payload) {
       if (!payload || typeof payload !== "object") return null;
-      if (window.debugLevel > 10) {
-        console.debug("cmsSettings/setData", state.data, payload);
-      }
-      const data = {};
-      Object.keys(payload).forEach(key => {
-        data[key] = JSON.parse(payload[key]) || {};
-      });
-      state.data = Object.keys(data).length ? data : null;
+      state.data = Object.freeze(payload);
       if (window.debugLevel > 50) {
-        console.debug("cmsSettings/setData data", data);
+        console.debug("player/setData data", state.data);
       }
     }
   },
@@ -40,12 +82,12 @@ export default {
     fetchData({ state, rootState, commit }, payload = {}) {
       if (!payload.forced) payload.forced = false;
       if (window.debugLevel > 10) {
-        console.debug("cmsSettings/fetchData", payload, state.data);
+        console.debug("player/fetchData", payload, state.data);
       }
       // Возвращаем промис если данные уже грузятся
       if (state.isDataLoading) {
         if (window.debugLevel > 10) {
-          console.debug("cmsSettings/fetchData already in progress...");
+          console.debug("player/fetchData already in progress...");
         }
         return this.dataPromise;
       }
@@ -63,7 +105,7 @@ export default {
         ) {
           if (window.debugLevel > 10) {
             console.debug(
-              "cmsSettings/fetchData loaded from CACHE",
+              "player/fetchData loaded from CACHE",
               state.isDataLoaded,
               state.data
             );
@@ -77,7 +119,7 @@ export default {
           "?requestUUID=" +
           this._vm.$uuid.v1();
         if (window.debugLevel > 10) {
-          console.debug("cmsSettings/fetchData requestUrl", requestUrl);
+          console.debug("player/fetchData requestUrl", requestUrl);
         }
         // Запрашиваем данные из API
         commit("setIsDataLoading", true);
@@ -85,18 +127,15 @@ export default {
           .get(requestUrl)
           .then(response => {
             if (!response.data) {
-              throw new Error("cmsSettings/fetchData response has no data");
+              throw new Error("player/fetchData response has no data");
             }
             if (window.debugLevel > 10) {
-              console.debug("cmsSettings/fetchData response", response);
+              console.debug("player/fetchData response", response);
             }
             state.isDataLoaded = new Date();
             commit("setData", response.data);
             if (window.debugLevel > 10) {
-              console.debug(
-                "cmsSettings/fetchData loaded from API",
-                state.data
-              );
+              console.debug("player/fetchData loaded from API", state.data);
             }
             resolve(state.data);
           })

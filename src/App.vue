@@ -43,17 +43,15 @@ export default {
     // Запросим данные модулей, необходимых для запуска приложения
     this.$store.dispatch("api/batchData", {
       modules: [
-        "cmsSettings",
-        "currencies",
-        "cmsRoutes",
         "player",
         "playerIpInfo",
-        "playerSettings"
+        "playerSettings",
+        "cmsTranslations",
+        "cmsSettings",
+        "cmsCurrencies",
+        "cmsRoutes"
       ]
     });
-
-    // Запросим данные переводов интерфейса
-    this.$store.dispatch("translations/fetchData");
   }
 };
 </script>

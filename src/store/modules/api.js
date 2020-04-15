@@ -3,7 +3,7 @@ import axios from "axios-jsonp-pro";
 export default {
   name: "api",
   namespaced: true,
-  dataPromise: null,
+  dataPromise: {},
   state: {
     apiPath: process.env.VUE_APP_API_PATH,
     batchPath: process.env.VUE_APP_API_PATH_BATCH + "?",
@@ -31,16 +31,27 @@ export default {
     }
   },
   actions: {
-    batchData({ state, rootState, commit }, payload = {}) {
+    batchData({ rootState, commit }, payload = {}) {
       if (!payload.modules || !payload.modules.length) return;
       if (!payload.lang)
-        payload.lang = window.LANG_CODE || process.env.VUE_APP_DEFAULT_LANGUAGE;
+        payload.lang =
+          (rootState.player &&
+            rootState.player.data &&
+            rootState.player.data.language) ||
+          window.LANG_CODE ||
+          process.env.VUE_APP_DEFAULT_LANGUAGE;
+      if (!payload.currency)
+        payload.currency =
+          (rootState.player &&
+            rootState.player.data &&
+            rootState.player.data.currency) ||
+          process.env.VUE_APP_DEFAULT_CURRENCY;
       if (!payload.forced) payload.forced = false;
       if (window.debugLevel > 10) {
-        console.debug("api/batchData", payload, rootState);
+        console.debug("api/batchData", payload);
       }
       // Возвращаем промис если данные уже грузятся
-      if (state.isDataLoading) {
+      if (this.isDataLoading) {
         if (window.debugLevel > 10) {
           console.debug("api/batchData already in progress...");
         }

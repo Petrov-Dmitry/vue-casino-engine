@@ -1,13 +1,13 @@
 import axios from "axios-jsonp-pro";
 
 export default {
-  name: "cmsSettings",
+  name: "playerSettings",
   namespaced: true,
   dataPromise: null,
   state: {
-    api: "cms",
-    route: "api/cms/settings",
-    batchObjectName: "CmsApiCmsSettings",
+    api: "base",
+    route: "api/v2/player/settings",
+    batchObjectName: "BaseApiV2PlayerSettings",
     data: null,
     isDataLoading: false,
     isDataLoaded: new Date("1970/01/02 00:00:00"),
@@ -18,21 +18,14 @@ export default {
       payload = !!payload;
       state.isDataLoading = payload;
       if (window.debugLevel > 10) {
-        console.debug("cmsSettings/setDataLoading", state.isDataLoading);
+        console.debug("playerSettings/setDataLoading", state.isDataLoading);
       }
     },
     setData(state, payload) {
       if (!payload || typeof payload !== "object") return null;
-      if (window.debugLevel > 10) {
-        console.debug("cmsSettings/setData", state.data, payload);
-      }
-      const data = {};
-      Object.keys(payload).forEach(key => {
-        data[key] = JSON.parse(payload[key]) || {};
-      });
-      state.data = Object.keys(data).length ? data : null;
+      state.data = Object.freeze(payload);
       if (window.debugLevel > 50) {
-        console.debug("cmsSettings/setData data", data);
+        console.debug("playerSettings/setData data", state.data);
       }
     }
   },
@@ -40,12 +33,12 @@ export default {
     fetchData({ state, rootState, commit }, payload = {}) {
       if (!payload.forced) payload.forced = false;
       if (window.debugLevel > 10) {
-        console.debug("cmsSettings/fetchData", payload, state.data);
+        console.debug("playerSettings/fetchData", payload, state.data);
       }
       // Возвращаем промис если данные уже грузятся
       if (state.isDataLoading) {
         if (window.debugLevel > 10) {
-          console.debug("cmsSettings/fetchData already in progress...");
+          console.debug("playerSettings/fetchData already in progress...");
         }
         return this.dataPromise;
       }
@@ -63,7 +56,7 @@ export default {
         ) {
           if (window.debugLevel > 10) {
             console.debug(
-              "cmsSettings/fetchData loaded from CACHE",
+              "playerSettings/fetchData loaded from CACHE",
               state.isDataLoaded,
               state.data
             );
@@ -77,7 +70,7 @@ export default {
           "?requestUUID=" +
           this._vm.$uuid.v1();
         if (window.debugLevel > 10) {
-          console.debug("cmsSettings/fetchData requestUrl", requestUrl);
+          console.debug("playerSettings/fetchData requestUrl", requestUrl);
         }
         // Запрашиваем данные из API
         commit("setIsDataLoading", true);
@@ -85,16 +78,16 @@ export default {
           .get(requestUrl)
           .then(response => {
             if (!response.data) {
-              throw new Error("cmsSettings/fetchData response has no data");
+              throw new Error("playerSettings/fetchData response has no data");
             }
             if (window.debugLevel > 10) {
-              console.debug("cmsSettings/fetchData response", response);
+              console.debug("playerSettings/fetchData response", response);
             }
             state.isDataLoaded = new Date();
             commit("setData", response.data);
             if (window.debugLevel > 10) {
               console.debug(
-                "cmsSettings/fetchData loaded from API",
+                "playerSettings/fetchData loaded from API",
                 state.data
               );
             }

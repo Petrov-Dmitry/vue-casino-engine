@@ -96,7 +96,7 @@ export default {
                 rootState[moduleName].data
               );
             }
-            return resolve(rootState[moduleName].data);
+            return rootState;
           }
           // Добавляем запрос в список
           const moduleRoute = module.route.replace("%lang%", payload.lang);
@@ -104,14 +104,14 @@ export default {
             "%lang%",
             payload.lang.charAt(0).toUpperCase() + payload.lang.slice(1)
           );
-          if (!moduleRoute || !moduleBatchName) return;
+          if (!moduleRoute || !moduleBatchName) return rootState;
           const moduleQuery = module.api + "[]=" + moduleRoute;
           if (window.debugLevel > 50) {
             console.debug("api/batchData", moduleName, module, moduleQuery);
           }
           modulesRequests.push(moduleQuery);
         });
-        if (!modulesRequests.length) return resolve(rootState);
+        if (!modulesRequests.length) return rootState;
         if (window.debugLevel > 10) {
           console.debug("api/batchData modulesRequests", modulesRequests);
         }
@@ -148,7 +148,7 @@ export default {
                 payload.lang.charAt(0).toUpperCase() + payload.lang.slice(1)
               );
               const moduleResponse = response.data[moduleBatchName] || false;
-              if (!moduleBatchName || !moduleResponse) return;
+              if (!moduleBatchName || !moduleResponse) return rootState;
               if (window.debugLevel > 10) {
                 console.debug(
                   "api/batchData response",
@@ -166,8 +166,8 @@ export default {
                   rootState[moduleName]
                 );
               }
-              resolve(rootState[moduleName]);
             });
+            resolve(rootState);
           })
           .catch(error => {
             console.error(error);
@@ -181,6 +181,7 @@ export default {
             state.dataPromise[queryHash] = null;
           });
       });
+      return state.dataPromise[queryHash];
     }
   }
 };

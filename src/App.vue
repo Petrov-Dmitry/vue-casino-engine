@@ -41,17 +41,23 @@ export default {
     }
 
     // Запросим данные модулей, необходимых для запуска приложения
-    this.$store.dispatch("api/batchData", {
-      modules: [
-        "player",
-        "playerIpInfo",
-        "playerSettings",
-        "cmsTranslations",
-        "cmsSettings",
-        "cmsCurrencies",
-        "cmsRoutes"
-      ]
-    });
+    this.$store
+      .dispatch("api/batchData", {
+        modules: [
+          "player",
+          "playerIpInfo",
+          "playerSettings",
+          "cmsTranslations",
+          "cmsSettings",
+          "cmsCurrencies",
+          "cmsRoutes"
+        ]
+      })
+      .then(data => {
+        if (window.debugLevel > 1) {
+          console.debug("App initial data loaded", new Date(), data);
+        }
+      });
   }
 };
 </script>

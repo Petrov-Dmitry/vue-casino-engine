@@ -1,13 +1,14 @@
 import axios from "axios-jsonp-pro";
+import md5 from "js-md5";
 
 export default {
   name: "api",
   namespaced: true,
-  dataPromise: {},
   state: {
     apiPath: process.env.VUE_APP_API_PATH,
     batchPath: process.env.VUE_APP_API_PATH_BATCH + "?",
-    isDataLoading: false
+    dataPromise: {},
+    isDataLoading: {}
   },
   mutations: {
     setApiPath(state, payload) {
@@ -23,16 +24,23 @@ export default {
         console.debug("api/setLang", state.lang);
       }
     },
-    setIsDataLoading(state, payload) {
-      state.isDataLoading = !!payload;
+    setIsDataLoading(state, payload = {}) {
+      if (!payload || !payload.queryHash) return;
+      state.isDataLoading[payload.queryHash] = !!payload.loading;
       if (window.debugLevel > 10) {
-        console.debug("api/setDataLoading", state.isDataLoading);
+        console.debug(
+          "api/setDataLoading",
+          payload.queryHash,
+          state.isDataLoading[payload.queryHash]
+        );
       }
     }
   },
   actions: {
-    batchData({ rootState, commit }, payload = {}) {
+    batchData({ state, rootState, commit }, payload = {}) {
+      // Проверяем наличие списка модулей
       if (!payload.modules || !payload.modules.length) return;
+      // Устанавливаем язык запросов
       if (!payload.lang)
         payload.lang =
           (rootState.player &&
@@ -40,25 +48,29 @@ export default {
             rootState.player.data.language) ||
           window.LANG_CODE ||
           process.env.VUE_APP_DEFAULT_LANGUAGE;
+      // Устанавливаем валюту запросов
       if (!payload.currency)
         payload.currency =
           (rootState.player &&
             rootState.player.data &&
             rootState.player.data.currency) ||
           process.env.VUE_APP_DEFAULT_CURRENCY;
+      // Признак принудительного запроса данных из API
       if (!payload.forced) payload.forced = false;
+      // Хэш запроса
+      const queryHash = md5(payload.toString());
       if (window.debugLevel > 10) {
-        console.debug("api/batchData", payload);
+        console.debug("api/batchData", payload, queryHash);
       }
       // Возвращаем промис если данные уже грузятся
-      if (this.isDataLoading) {
+      if (state.isDataLoading[queryHash] && state.dataPromise[queryHash]) {
         if (window.debugLevel > 10) {
           console.debug("api/batchData already in progress...");
         }
-        return this.dataPromise;
+        return state.dataPromise[queryHash];
       }
       // Создаем промис загрузки данных
-      this.dataPromise = new Promise((resolve, reject) => {
+      state.dataPromise[queryHash] = new Promise((resolve, reject) => {
         const modulesRequests = [];
         payload.modules.forEach(moduleName => {
           const module = rootState[moduleName] || false;
@@ -114,7 +126,10 @@ export default {
           console.debug("api/batchData requestUrl", requestUrl);
         }
         // Запрашиваем данные из API
-        commit("setIsDataLoading", true);
+        commit("setIsDataLoading", {
+          queryHash: queryHash,
+          loading: true
+        });
         axios
           .get(requestUrl)
           .then(response => {
@@ -159,8 +174,11 @@ export default {
             reject(error.response);
           })
           .finally(() => {
-            commit("setIsDataLoading", false);
-            this.dataPromise = null;
+            commit("setIsDataLoading", {
+              queryHash: queryHash,
+              loading: false
+            });
+            state.dataPromise[queryHash] = null;
           });
       });
     }

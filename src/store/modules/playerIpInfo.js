@@ -11,7 +11,7 @@ export default {
     data: null,
     isDataLoading: false,
     isDataLoaded: new Date("1970/01/02 00:00:00"),
-    dataLifetime: parseInt(process.env.VUE_APP_DATA_LIFETIME)
+    dataLifetime: parseInt(process.env.VUE_APP_PLAYER_DATA_LIFETIME)
   },
   mutations: {
     setIsDataLoading(state, payload = false) {

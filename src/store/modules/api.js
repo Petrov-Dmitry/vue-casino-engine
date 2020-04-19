@@ -1,5 +1,4 @@
 import axios from "axios-jsonp-pro";
-import md5 from "js-md5";
 
 export default {
   name: "api",
@@ -7,8 +6,14 @@ export default {
   state: {
     apiPath: process.env.VUE_APP_API_PATH,
     batchPath: process.env.VUE_APP_API_PATH_BATCH + "?",
-    dataPromise: {},
-    isDataLoading: {},
+    dataPromise: {
+      initialData: null,
+      profileData: null
+    },
+    isDataLoading: {
+      initialData: false,
+      profileData: false
+    },
     initialData: [
       "player",
       "playerIpInfo",
@@ -20,7 +25,7 @@ export default {
       "cmsRoutes",
       "cmsPages"
     ],
-    profileData: []
+    profileData: ["player", "playerIpInfo", "playerSettings"]
   },
   getters: {
     defaultLocaleCode(state, getters, rootState) {
@@ -58,14 +63,15 @@ export default {
         console.debug("api/setLang", state.lang);
       }
     },
-    setIsDataLoading(state, payload = {}) {
-      if (!payload || !payload.queryHash) return;
-      state.isDataLoading[payload.queryHash] = !!payload.loading;
+    setDataLoading(state, payload = {}) {
+      if (!payload || !payload.queryName) return;
+      if (!payload.loading) payload.loading = false;
+      state.isDataLoading[payload.queryName] = payload.loading;
       if (window.debugLevel > 10) {
         console.debug(
           "api/setDataLoading",
-          payload.queryHash,
-          state.isDataLoading[payload.queryHash]
+          payload.queryName,
+          state.isDataLoading[payload.queryName]
         );
       }
     }
@@ -73,7 +79,8 @@ export default {
   actions: {
     batchData({ state, rootState, getters, commit }, payload = {}) {
       // Проверяем наличие списка модулей
-      if (!payload.modules || !payload.modules.length) return;
+      if (!payload.modules) return;
+      payload.modulesList = state[payload.modules];
       // Устанавливаем язык запросов
       if (!payload.lang) payload.lang = getters.defaultLocaleCode;
       // Устанавливаем валюту запросов
@@ -81,21 +88,28 @@ export default {
       // Признак принудительного запроса данных из API
       if (!payload.forced) payload.forced = false;
       // Хэш запроса
-      const queryHash = md5(payload.toString());
       if (window.debugLevel > 10) {
-        console.debug("api/batchData", payload, queryHash);
+        console.debug("api/batchData", payload, payload.modules);
       }
       // Возвращаем промис если данные уже грузятся
-      if (state.isDataLoading[queryHash] && state.dataPromise[queryHash]) {
+      if (
+        state.isDataLoading[payload.modules] &&
+        state.dataPromise[payload.modules] &&
+        Date.now() - new Date(state.isDataLoading[payload.modules]).getTime() <
+          parseInt(process.env.VUE_APP_API_TIMEOUT)
+      ) {
         if (window.debugLevel > 10) {
-          console.debug("api/batchData already in progress...");
+          console.debug(
+            "api/batchData already in progress...",
+            state.isDataLoading[payload.modules]
+          );
         }
-        return state.dataPromise[queryHash];
+        return state.dataPromise[payload.modules];
       }
       // Создаем промис загрузки данных
-      state.dataPromise[queryHash] = new Promise((resolve, reject) => {
+      state.dataPromise[payload.modules] = new Promise((resolve, reject) => {
         const modulesRequests = [];
-        payload.modules.forEach(moduleName => {
+        payload.modulesList.forEach(moduleName => {
           const module = rootState[moduleName] || false;
           if (!module) return;
           // Пытаемся получить данные из локального кэша
@@ -149,10 +163,11 @@ export default {
           console.debug("api/batchData requestUrl", requestUrl);
         }
         // Запрашиваем данные из API
-        commit("setIsDataLoading", {
-          queryHash: queryHash,
-          loading: true
+        commit("setDataLoading", {
+          queryName: payload.modules,
+          loading: new Date()
         });
+        state.isDataLoading[payload.modules] = true;
         axios
           .get(requestUrl)
           .then(response => {
@@ -163,7 +178,7 @@ export default {
               console.debug("api/batchData response", response);
             }
             // Получаем данные модулей
-            payload.modules.forEach(moduleName => {
+            payload.modulesList.forEach(moduleName => {
               const module = rootState[moduleName] || false;
               if (!module) return;
               const moduleBatchName = module.batchObjectName.replace(
@@ -197,14 +212,14 @@ export default {
             reject(error.response);
           })
           .finally(() => {
-            commit("setIsDataLoading", {
-              queryHash: queryHash,
+            commit("setDataLoading", {
+              queryName: payload.modules,
               loading: false
             });
-            state.dataPromise[queryHash] = null;
+            state.dataPromise[payload.modules] = null;
           });
       });
-      return state.dataPromise[queryHash];
+      return state.dataPromise[payload.modules];
     }
   }
 };

@@ -33,28 +33,19 @@
 </style>
 
 <script>
-import { mapState, mapGetters } from "vuex";
+import { mapGetters } from "vuex";
 
 export default {
   name: "App",
   computed: {
-    ...mapState("api", {
-      initialData: "initialData",
-      profileData: "profileData"
-    }),
     ...mapGetters("player", { isPlayerAuthorized: "isPlayerAuthorized" })
   },
   created() {
     if (window.debugLevel > 1) {
       console.debug("App created!", new Date(), this);
     }
-
     // Запросим данные модулей, необходимых для запуска приложения
-    this.$store
-      .dispatch("api/batchData", { modules: this.initialData })
-      .then(data => {
-        this.$bus.emit("app-initial-data-loaded", data);
-      });
+    this.fetchInitialData();
 
     // Данные модулей, необходимых для запуска приложения, загружены
     this.$bus.on("app-initial-data-loaded", data => {
@@ -69,13 +60,32 @@ export default {
             data.player.data
           );
         }
-        this.$store
-          .dispatch("api/batchData", { modules: this.profileData })
-          .then(data => {
-            this.$bus.emit("app-profile-data-loaded", data);
-          });
+        this.fetchProfileData();
       }
     });
+
+    // Данные модулей профиля пользователя загружены
+    this.$bus.on("app-profile-data-loaded", data => {
+      if (window.debugLevel > 1) {
+        console.debug("App profile data loaded", new Date(), data);
+      }
+    });
+  },
+  methods: {
+    fetchInitialData() {
+      this.$store
+        .dispatch("api/batchData", { modules: "initialData" })
+        .then(data => {
+          this.$bus.emit("app-initial-data-loaded", data);
+        });
+    },
+    fetchProfileData() {
+      this.$store
+        .dispatch("api/batchData", { modules: "profileData" })
+        .then(data => {
+          this.$bus.emit("app-profile-data-loaded", data);
+        });
+    }
   }
 };
 </script>

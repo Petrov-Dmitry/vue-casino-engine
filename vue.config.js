@@ -1,6 +1,6 @@
 module.exports = {
   pwa: {
-    workboxPluginMode: "InjectManifest",
+    workboxPluginMode: "GenerateSW",
     name: "vue-casino-engine",
     themeColor: "#4c4c4c",
     msTileColor: "#1c1e1a",

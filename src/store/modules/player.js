@@ -14,16 +14,10 @@ export default {
     dataLifetime: parseInt(process.env.VUE_APP_DATA_LIFETIME)
   },
   getters: {
-    showConfirmEmailNotify(state) {
-      return (
-        !state.data &&
-        !state.data.confirmedAt &&
-        !!state.data.id &&
-        Date.now() - (state.data.confirmationEmailSentAt || 0) >
-          parseInt(process.env.VUE_APP_EMAIL_CONFIRMATION_LIFETIME)
-      );
+    isPlayerAuthorized(state) {
+      return state.data && !!state.data.id;
     },
-    missedEmail(state) {
+    isMissedEmail(state) {
       return (
         state.data &&
         state.data.authFieldsMissed &&
@@ -31,7 +25,7 @@ export default {
         state.data.authFieldsMissed.includes("email")
       );
     },
-    missedCurrency(state) {
+    isMissedCurrency(state) {
       return (
         state.data &&
         state.data.authFieldsMissed &&

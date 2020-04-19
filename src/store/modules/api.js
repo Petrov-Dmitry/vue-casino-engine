@@ -8,7 +8,18 @@ export default {
     apiPath: process.env.VUE_APP_API_PATH,
     batchPath: process.env.VUE_APP_API_PATH_BATCH + "?",
     dataPromise: {},
-    isDataLoading: {}
+    isDataLoading: {},
+    initialData: [
+      "player",
+      "playerIpInfo",
+      "playerSettings",
+      "cmsTranslations",
+      "cmsSettings",
+      "cmsCurrencies",
+      "cmsRoutes",
+      "cmsPages"
+    ],
+    profileData: []
   },
   mutations: {
     setApiPath(state, payload) {

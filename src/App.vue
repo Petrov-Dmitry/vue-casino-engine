@@ -33,31 +33,49 @@
 </style>
 
 <script>
+import { mapState, mapGetters } from "vuex";
+
 export default {
   name: "App",
+  computed: {
+    ...mapState("api", {
+      initialData: "initialData",
+      profileData: "profileData"
+    }),
+    ...mapGetters("player", { isPlayerAuthorized: "isPlayerAuthorized" })
+  },
   created() {
     if (window.debugLevel > 1) {
-      console.debug("App created!", new Date());
+      console.debug("App created!", new Date(), this);
     }
 
     // Запросим данные модулей, необходимых для запуска приложения
     this.$store
-      .dispatch("api/batchData", {
-        modules: [
-          "player",
-          "playerIpInfo",
-          "playerSettings",
-          "cmsTranslations",
-          "cmsSettings",
-          "cmsCurrencies",
-          "cmsRoutes"
-        ]
-      })
+      .dispatch("api/batchData", { modules: this.initialData })
       .then(data => {
-        if (window.debugLevel > 1) {
-          console.debug("App initial data loaded", new Date(), data);
-        }
+        this.$bus.emit("app-initial-data-loaded", data);
       });
+
+    // Данные модулей, необходимых для запуска приложения, загружены
+    this.$bus.on("app-initial-data-loaded", data => {
+      if (window.debugLevel > 1) {
+        console.debug("App initial data loaded", new Date(), data);
+      }
+      // Если пользователь авторизован, загружаем данные, относящиеся к его профилю
+      if (this.isPlayerAuthorized) {
+        if (window.debugLevel > 1) {
+          console.debug(
+            "player authorized - try to load profile data for",
+            data.player.data
+          );
+        }
+        this.$store
+          .dispatch("api/batchData", { modules: this.profileData })
+          .then(data => {
+            this.$bus.emit("app-profile-data-loaded", data);
+          });
+      }
+    });
   }
 };
 </script>

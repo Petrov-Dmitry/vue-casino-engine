@@ -14,6 +14,7 @@ import playerSettings from "./modules/playerSettings";
 import cmsTranslations from "./modules/cmsTranslations";
 import cmsSettings from "./modules/cmsSettings";
 import cmsCurrencies from "./modules/cmsCurrencies";
+import cmsLocales from "./modules/cmsLocales";
 import cmsRoutes from "./modules/cmsRoutes";
 import cmsPages from "./modules/cmsPages";
 // Загружаем модули в store
@@ -25,6 +26,7 @@ const modules = {
   cmsTranslations,
   cmsSettings,
   cmsCurrencies,
+  cmsLocales,
   cmsRoutes,
   cmsPages
 };

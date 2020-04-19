@@ -16,10 +16,33 @@ export default {
       "cmsTranslations",
       "cmsSettings",
       "cmsCurrencies",
+      "cmsLocales",
       "cmsRoutes",
       "cmsPages"
     ],
     profileData: []
+  },
+  getters: {
+    defaultLocaleCode(state, getters, rootState) {
+      return (
+        (rootState.player &&
+          rootState.player.data &&
+          rootState.player.data.language) ||
+        (rootState.cmsLocales.data &&
+          rootState.cmsLocales.length &&
+          rootState.cmsLocales.find(locale => !!locale.default).code) ||
+        window.LANG_CODE ||
+        process.env.VUE_APP_DEFAULT_LANGUAGE
+      );
+    },
+    defaultCurrencyCode(state, getters, rootState) {
+      return (
+        (rootState.player &&
+          rootState.player.data &&
+          rootState.player.data.currency) ||
+        process.env.VUE_APP_DEFAULT_CURRENCY
+      );
+    }
   },
   mutations: {
     setApiPath(state, payload) {
@@ -48,24 +71,13 @@ export default {
     }
   },
   actions: {
-    batchData({ state, rootState, commit }, payload = {}) {
+    batchData({ state, rootState, getters, commit }, payload = {}) {
       // Проверяем наличие списка модулей
       if (!payload.modules || !payload.modules.length) return;
       // Устанавливаем язык запросов
-      if (!payload.lang)
-        payload.lang =
-          (rootState.player &&
-            rootState.player.data &&
-            rootState.player.data.language) ||
-          window.LANG_CODE ||
-          process.env.VUE_APP_DEFAULT_LANGUAGE;
+      if (!payload.lang) payload.lang = getters.defaultLocaleCode;
       // Устанавливаем валюту запросов
-      if (!payload.currency)
-        payload.currency =
-          (rootState.player &&
-            rootState.player.data &&
-            rootState.player.data.currency) ||
-          process.env.VUE_APP_DEFAULT_CURRENCY;
+      if (!payload.currency) payload.currency = getters.defaultCurrencyCode;
       // Признак принудительного запроса данных из API
       if (!payload.forced) payload.forced = false;
       // Хэш запроса

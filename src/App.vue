@@ -48,7 +48,8 @@ export default {
         "cmsCurrencies",
         "cmsLocales",
         "cmsRoutes",
-        "cmsPages"
+        "cmsPages",
+        "cmsBanners"
       ],
       profileDataList: ["player", "playerIpInfo", "playerSettings"]
     };

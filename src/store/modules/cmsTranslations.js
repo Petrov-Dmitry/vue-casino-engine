@@ -8,7 +8,6 @@ export default {
     api: "cms",
     route: "api/cms/strings/%lang%",
     batchObjectName: "CmsApiCmsStrings%lang%",
-    lang: window.LANG_CODE || process.env.VUE_APP_DEFAULT_LANGUAGE,
     data: null,
     isDataLoading: false,
     isDataLoaded: {},
@@ -41,7 +40,8 @@ export default {
       this.commit("cmsTranslations/setTranslations");
     },
     setTranslations(state, payload = {}) {
-      if (!payload || !payload.lang) payload.lang = state.lang;
+      if (!payload || !payload.lang)
+        payload.lang = this.getters["api/getLangCode"];
       if (this._vm.$i18n.localeExists(payload.lang)) {
         this._vm.$i18n.replace(
           payload.lang,
@@ -66,7 +66,7 @@ export default {
   actions: {
     fetchData({ state, rootState, commit }, payload = {}) {
       if (!payload.forced) payload.forced = false;
-      if (!payload.lang) payload.lang = state.lang;
+      if (!payload.lang) payload.lang = this.getters["api/getLangCode"];
       if (window.debugLevel > 10) {
         console.debug("cmsTranslations/fetchData", payload, state.data);
       }

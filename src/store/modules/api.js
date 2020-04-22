@@ -12,8 +12,8 @@ export default {
     isDataLoading: {}
   },
   getters: {
-    defaultLocaleCode(state, getters, rootState) {
-      return (
+    getLangCode(state, getters, rootState) {
+      const langCode =
         (rootState.player &&
           rootState.player.data &&
           rootState.player.data.language) ||
@@ -21,16 +21,22 @@ export default {
           rootState.cmsLocales.length &&
           rootState.cmsLocales.find(locale => !!locale.default).code) ||
         window.LANG_CODE ||
-        process.env.VUE_APP_DEFAULT_LANGUAGE
-      );
+        process.env.VUE_APP_DEFAULT_LANGUAGE;
+      if (window.debugLevel > 50) {
+        console.debug("api/getLangCode", langCode);
+      }
+      return langCode;
     },
-    defaultCurrencyCode(state, getters, rootState) {
-      return (
+    getCurrencyCode(state, getters, rootState) {
+      const currencyCode =
         (rootState.player &&
           rootState.player.data &&
           rootState.player.data.currency) ||
-        process.env.VUE_APP_DEFAULT_CURRENCY
-      );
+        process.env.VUE_APP_DEFAULT_CURRENCY;
+      if (window.debugLevel > 50) {
+        console.debug("api/getCurrencyCode", currencyCode);
+      }
+      return currencyCode;
     }
   },
   mutations: {
@@ -86,9 +92,9 @@ export default {
         );
       }
       // Устанавливаем язык запросов
-      if (!payload.lang) payload.lang = getters.defaultLocaleCode;
+      if (!payload.lang) payload.lang = getters.getLangCode;
       // Устанавливаем валюту запросов
-      if (!payload.currency) payload.currency = getters.defaultCurrencyCode;
+      if (!payload.currency) payload.currency = getters.getCurrencyCode;
       // Признак принудительного запроса данных из API
       if (!payload.forced) payload.forced = false;
       if (window.debugLevel > 10) {

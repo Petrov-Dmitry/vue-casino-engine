@@ -37,6 +37,22 @@ import { mapGetters } from "vuex";
 
 export default {
   name: "App",
+  data() {
+    return {
+      initialData: [
+        "player",
+        "playerIpInfo",
+        "playerSettings",
+        "cmsTranslations",
+        "cmsSettings",
+        "cmsCurrencies",
+        "cmsLocales",
+        "cmsRoutes",
+        "cmsPages"
+      ],
+      profileData: ["player", "playerIpInfo", "playerSettings"]
+    };
+  },
   computed: {
     ...mapGetters("player", { isPlayerAuthorized: "isPlayerAuthorized" })
   },
@@ -46,23 +62,24 @@ export default {
     }
     // Запросим данные модулей, необходимых для запуска приложения
     this.fetchInitialData();
+    this.fetchProfileData();
 
     // Данные модулей, необходимых для запуска приложения, загружены
-    this.$bus.on("app-initial-data-loaded", data => {
-      if (window.debugLevel > 1) {
-        console.debug("App initial data loaded", new Date(), data);
-      }
-      // Если пользователь авторизован, загружаем данные, относящиеся к его профилю
-      if (this.isPlayerAuthorized) {
-        if (window.debugLevel > 1) {
-          console.debug(
-            "player authorized - try to load profile data for",
-            data.player.data
-          );
-        }
-        this.fetchProfileData();
-      }
-    });
+    // this.$bus.on("app-initial-data-loaded", data => {
+    //   if (window.debugLevel > 1) {
+    //     console.debug("App initial data loaded", new Date(), data);
+    //   }
+    //   // Если пользователь авторизован, загружаем данные, относящиеся к его профилю
+    //   if (this.isPlayerAuthorized) {
+    //     if (window.debugLevel > 1) {
+    //       console.debug(
+    //         "player authorized - try to load profile data for",
+    //         data.player.data
+    //       );
+    //     }
+    //     this.fetchProfileData();
+    //   }
+    // });
 
     // Данные модулей профиля пользователя загружены
     this.$bus.on("app-profile-data-loaded", data => {
@@ -74,14 +91,14 @@ export default {
   methods: {
     fetchInitialData() {
       this.$store
-        .dispatch("api/batchData", { modules: "initialData" })
+        .dispatch("api/batchData", { modules: this.initialData })
         .then(data => {
           this.$bus.emit("app-initial-data-loaded", data);
         });
     },
     fetchProfileData() {
       this.$store
-        .dispatch("api/batchData", { modules: "profileData" })
+        .dispatch("api/batchData", { modules: this.profileData })
         .then(data => {
           this.$bus.emit("app-profile-data-loaded", data);
         });

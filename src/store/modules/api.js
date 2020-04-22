@@ -6,26 +6,8 @@ export default {
   state: {
     apiPath: process.env.VUE_APP_API_PATH,
     batchPath: process.env.VUE_APP_API_PATH_BATCH + "?",
-    dataPromise: {
-      initialData: null,
-      profileData: null
-    },
-    isDataLoading: {
-      initialData: false,
-      profileData: false
-    },
-    initialData: [
-      "player",
-      "playerIpInfo",
-      "playerSettings",
-      "cmsTranslations",
-      "cmsSettings",
-      "cmsCurrencies",
-      "cmsLocales",
-      "cmsRoutes",
-      "cmsPages"
-    ],
-    profileData: ["player", "playerIpInfo", "playerSettings"]
+    dataPromise: {},
+    isDataLoading: {}
   },
   getters: {
     defaultLocaleCode(state, getters, rootState) {
@@ -79,8 +61,16 @@ export default {
   actions: {
     batchData({ state, rootState, getters, commit }, payload = {}) {
       // Проверяем наличие списка модулей
-      if (!payload.modules) return;
-      payload.modulesList = state[payload.modules];
+      if (
+        !payload ||
+        !payload.modules ||
+        !Array.isArray(payload.modules) ||
+        !payload.modules.length
+      ) {
+        throw new Error(
+          "List of modules should be passed to create batch query"
+        );
+      }
       // Устанавливаем язык запросов
       if (!payload.lang) payload.lang = getters.defaultLocaleCode;
       // Устанавливаем валюту запросов
@@ -109,7 +99,7 @@ export default {
       // Создаем промис загрузки данных
       state.dataPromise[payload.modules] = new Promise((resolve, reject) => {
         const modulesRequests = [];
-        payload.modulesList.forEach(moduleName => {
+        payload.modules.forEach(moduleName => {
           const module = rootState[moduleName] || false;
           if (!module) return;
           // Пытаемся получить данные из локального кэша
@@ -178,7 +168,7 @@ export default {
               console.debug("api/batchData response", response);
             }
             // Получаем данные модулей
-            payload.modulesList.forEach(moduleName => {
+            payload.modules.forEach(moduleName => {
               const module = rootState[moduleName] || false;
               if (!module) return;
               const moduleBatchName = module.batchObjectName.replace(

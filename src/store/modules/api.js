@@ -1,4 +1,5 @@
 import axios from "axios-jsonp-pro";
+import md5 from "js-md5";
 
 export default {
   name: "api",
@@ -7,6 +8,7 @@ export default {
     apiPath: process.env.VUE_APP_API_PATH,
     batchPath: process.env.VUE_APP_API_PATH_BATCH + "?",
     dataPromise: {},
+    dataPromiseLoading: {},
     isDataLoading: {}
   },
   getters: {
@@ -45,15 +47,27 @@ export default {
         console.debug("api/setLang", state.lang);
       }
     },
-    setDataLoading(state, payload = {}) {
-      if (!payload || !payload.queryName) return;
-      if (!payload.loading) payload.loading = false;
-      state.isDataLoading[payload.queryName] = payload.loading;
+    setPromiseStarted(state, payload) {
+      if (!payload || !payload.dataPromise) return;
+      if (!payload.value) payload.value = false;
+      state.dataPromiseLoading[payload.dataPromise] = payload.value;
+      if (window.debugLevel > 10) {
+        console.debug(
+          "api/setPromiseStarted",
+          payload.dataPromise,
+          state.dataPromiseLoading[payload.dataPromise]
+        );
+      }
+    },
+    setDataLoading(state, payload) {
+      if (!payload || !payload.moduleName) return;
+      if (!payload.value) payload.value = false;
+      state.isDataLoading[payload.moduleName] = payload.value;
       if (window.debugLevel > 10) {
         console.debug(
           "api/setDataLoading",
-          payload.queryName,
-          state.isDataLoading[payload.queryName]
+          payload.moduleName,
+          state.isDataLoading[payload.moduleName]
         );
       }
     }
@@ -77,29 +91,58 @@ export default {
       if (!payload.currency) payload.currency = getters.defaultCurrencyCode;
       // Признак принудительного запроса данных из API
       if (!payload.forced) payload.forced = false;
-      // Хэш запроса
       if (window.debugLevel > 10) {
-        console.debug("api/batchData", payload, payload.modules);
+        console.debug("api/batchData", payload);
       }
+
+      // Проверяем наличие модулей в isDataLoading
+      const modulesList = [];
+      payload.modules.forEach(moduleName => {
+        if (window.debugLevel > 20) {
+          console.debug(
+            "api/batchData make module query",
+            moduleName,
+            !state.isDataLoading[moduleName]
+          );
+        }
+        // Если модуль еще не загружается (отсутствует в isDataLoading)
+        if (!state.isDataLoading[moduleName]) {
+          // Добавим его в список запросов
+          modulesList.push(moduleName);
+        }
+      });
+
+      // Получаем хэш списка запрашиваемых модулей
+      const batchHash = md5(modulesList);
+      if (window.debugLevel > 10) {
+        console.debug("api/batchData modules list", batchHash, modulesList);
+      }
+
       // Возвращаем промис если данные уже грузятся
       if (
-        state.isDataLoading[payload.modules] &&
-        state.dataPromise[payload.modules] &&
-        Date.now() - new Date(state.isDataLoading[payload.modules]).getTime() <
+        state.dataPromise[batchHash] &&
+        state.dataPromiseLoading[batchHash] &&
+        Date.now() - new Date(state.dataPromiseLoading[batchHash]).getTime() <
           parseInt(process.env.VUE_APP_API_TIMEOUT)
       ) {
         if (window.debugLevel > 10) {
           console.debug(
             "api/batchData already in progress...",
-            state.isDataLoading[payload.modules]
+            batchHash,
+            state.dataPromiseLoading[batchHash]
           );
         }
-        return state.dataPromise[payload.modules];
+        return state.dataPromise[batchHash];
       }
+
       // Создаем промис загрузки данных
-      state.dataPromise[payload.modules] = new Promise((resolve, reject) => {
+      state.dataPromise[batchHash] = new Promise((resolve, reject) => {
+        commit("setPromiseStarted", {
+          dataPromise: batchHash,
+          value: new Date()
+        });
         const modulesRequests = [];
-        payload.modules.forEach(moduleName => {
+        modulesList.forEach(moduleName => {
           const module = rootState[moduleName] || false;
           if (!module) return;
           // Пытаемся получить данные из локального кэша
@@ -137,8 +180,19 @@ export default {
             console.debug("api/batchData", moduleName, module, moduleQuery);
           }
           modulesRequests.push(moduleQuery);
+          commit("setDataLoading", {
+            moduleName: moduleName,
+            value: new Date()
+          });
         });
-        if (!modulesRequests.length) return rootState;
+        // Если запрашивать нечего - ресолвим промис
+        if (!modulesRequests.length) {
+          state.dataPromise[batchHash] = null;
+          commit("setPromiseStarted", {
+            dataPromise: batchHash
+          });
+          return resolve(rootState);
+        }
         if (window.debugLevel > 10) {
           console.debug("api/batchData modulesRequests", modulesRequests);
         }
@@ -153,11 +207,6 @@ export default {
           console.debug("api/batchData requestUrl", requestUrl);
         }
         // Запрашиваем данные из API
-        commit("setDataLoading", {
-          queryName: payload.modules,
-          loading: new Date()
-        });
-        state.isDataLoading[payload.modules] = true;
         axios
           .get(requestUrl)
           .then(response => {
@@ -168,7 +217,7 @@ export default {
               console.debug("api/batchData response", response);
             }
             // Получаем данные модулей
-            payload.modules.forEach(moduleName => {
+            modulesList.forEach(moduleName => {
               const module = rootState[moduleName] || false;
               if (!module) return;
               const moduleBatchName = module.batchObjectName.replace(
@@ -184,6 +233,7 @@ export default {
                   moduleResponse
                 );
               }
+              commit("setDataLoading", { moduleName: moduleName });
               rootState[moduleName].isDataLoaded = new Date();
               commit(moduleName + "/setData", moduleResponse, { root: true });
               if (window.debugLevel > 10) {
@@ -202,14 +252,13 @@ export default {
             reject(error.response);
           })
           .finally(() => {
-            commit("setDataLoading", {
-              queryName: payload.modules,
-              loading: false
+            state.dataPromise[batchHash] = null;
+            commit("setPromiseStarted", {
+              dataPromise: batchHash
             });
-            state.dataPromise[payload.modules] = null;
           });
       });
-      return state.dataPromise[payload.modules];
+      return state.dataPromise[batchHash];
     }
   }
 };

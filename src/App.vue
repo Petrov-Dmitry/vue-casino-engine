@@ -39,7 +39,7 @@ export default {
   name: "App",
   data() {
     return {
-      initialData: [
+      initialDataList: [
         "player",
         "playerIpInfo",
         "playerSettings",
@@ -50,7 +50,7 @@ export default {
         "cmsRoutes",
         "cmsPages"
       ],
-      profileData: ["player", "playerIpInfo", "playerSettings"]
+      profileDataList: ["player", "playerIpInfo", "playerSettings"]
     };
   },
   computed: {
@@ -60,45 +60,56 @@ export default {
     if (window.debugLevel > 1) {
       console.debug("App created!", new Date(), this);
     }
+
     // Запросим данные модулей, необходимых для запуска приложения
     this.fetchInitialData();
-    this.fetchProfileData();
 
     // Данные модулей, необходимых для запуска приложения, загружены
-    // this.$bus.on("app-initial-data-loaded", data => {
-    //   if (window.debugLevel > 1) {
-    //     console.debug("App initial data loaded", new Date(), data);
-    //   }
-    //   // Если пользователь авторизован, загружаем данные, относящиеся к его профилю
-    //   if (this.isPlayerAuthorized) {
-    //     if (window.debugLevel > 1) {
-    //       console.debug(
-    //         "player authorized - try to load profile data for",
-    //         data.player.data
-    //       );
-    //     }
-    //     this.fetchProfileData();
-    //   }
-    // });
+    this.$bus.on("app-initial-data-loaded", data => {
+      if (window.debugLevel > 1) {
+        console.debug("App: initial data loaded", new Date(), data);
+      }
+      // Если пользователь авторизован, загружаем данные, относящиеся к его профилю
+      if (this.isPlayerAuthorized) {
+        if (window.debugLevel > 1) {
+          console.debug("App: player authorized - try to load profile data");
+        }
+        this.fetchProfileData();
+      }
+    });
 
     // Данные модулей профиля пользователя загружены
     this.$bus.on("app-profile-data-loaded", data => {
       if (window.debugLevel > 1) {
-        console.debug("App profile data loaded", new Date(), data);
+        console.debug("App: profile data loaded", new Date(), data);
       }
     });
   },
   methods: {
     fetchInitialData() {
+      if (window.debugLevel > 1) {
+        console.debug(
+          "App: fetchInitialData",
+          new Date(),
+          this.initialDataList
+        );
+      }
       this.$store
-        .dispatch("api/batchData", { modules: this.initialData })
+        .dispatch("api/batchData", { modules: this.initialDataList })
         .then(data => {
           this.$bus.emit("app-initial-data-loaded", data);
         });
     },
     fetchProfileData() {
+      if (window.debugLevel > 1) {
+        console.debug(
+          "App: fetchProfileData",
+          new Date(),
+          this.profileDataList
+        );
+      }
       this.$store
-        .dispatch("api/batchData", { modules: this.profileData })
+        .dispatch("api/batchData", { modules: this.profileDataList })
         .then(data => {
           this.$bus.emit("app-profile-data-loaded", data);
         });

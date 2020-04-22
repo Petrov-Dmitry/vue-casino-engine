@@ -24,7 +24,7 @@ export default {
       payload = !!payload;
       state.isDataLoading = payload;
       if (window.debugLevel > 10) {
-        console.debug("cmscmsTranslations/setDataLoading", state.isDataLoading);
+        console.debug("cmsTranslations/setDataLoading", state.isDataLoading);
       }
     },
     setData(state, payload) {

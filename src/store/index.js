@@ -17,6 +17,8 @@ import cmsCurrencies from "./modules/cmsCurrencies";
 import cmsLocales from "./modules/cmsLocales";
 import cmsRoutes from "./modules/cmsRoutes";
 import cmsPages from "./modules/cmsPages";
+import cmsSeoMeta from "./modules/cmsSeoMeta";
+import cmsSeoText from "./modules/cmsSeoText";
 import cmsBanners from "./modules/cmsBanners";
 // Загружаем модули в store
 const modules = {
@@ -30,6 +32,8 @@ const modules = {
   cmsLocales,
   cmsRoutes,
   cmsPages,
+  cmsSeoMeta,
+  cmsSeoText,
   cmsBanners
 };
 // Загружаем плагины vuex

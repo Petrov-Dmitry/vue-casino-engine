@@ -49,6 +49,8 @@ export default {
         "cmsLocales",
         "cmsRoutes",
         "cmsPages",
+        "cmsSeoMeta",
+        "cmsSeoText",
         "cmsBanners"
       ],
       profileDataList: ["player", "playerIpInfo", "playerSettings"]

@@ -91,10 +91,10 @@ export default {
           "List of modules should be passed to create batch query"
         );
       }
-      // Устанавливаем язык запросов
+      // Устанавливаем язык, валюту и домен запросов
       if (!payload.lang) payload.lang = getters.getLangCode;
-      // Устанавливаем валюту запросов
       if (!payload.currency) payload.currency = getters.getCurrencyCode;
+      if (!payload.domain) payload.domain = window.location.hostname;
       // Признак принудительного запроса данных из API
       if (!payload.forced) payload.forced = false;
       if (window.debugLevel > 10) {
@@ -175,12 +175,11 @@ export default {
             return rootState;
           }
           // Добавляем запрос в список
-          const moduleRoute = module.route.replace("%lang%", payload.lang);
-          const moduleBatchName = module.batchObjectName.replace(
-            "%lang%",
-            payload.lang.charAt(0).toUpperCase() + payload.lang.slice(1)
-          );
-          if (!moduleRoute || !moduleBatchName) return rootState;
+          const moduleRoute = module.route
+            .replace("%lang%", payload.lang)
+            .replace("%currency%", payload.currency)
+            .replace("%domain%", payload.domain);
+          if (!moduleRoute) return rootState;
           const moduleQuery = module.api + "[]=" + moduleRoute;
           if (window.debugLevel > 50) {
             console.debug("api/batchData", moduleName, module, moduleQuery);
@@ -226,16 +225,33 @@ export default {
             modulesList.forEach(moduleName => {
               const module = rootState[moduleName] || false;
               if (!module) return;
-              const moduleBatchName = module.batchObjectName.replace(
-                "%lang%",
-                payload.lang.charAt(0).toUpperCase() + payload.lang.slice(1)
+              // Определяем имя модуля в ответе
+              const responseDomainName = window.location.hostname.replace(
+                /[^a-z0-9]/g,
+                ""
               );
+              const moduleBatchName = module.batchObjectName
+                .replace(
+                  "%lang%",
+                  payload.lang.charAt(0).toUpperCase() + payload.lang.slice(1)
+                )
+                .replace(
+                  "%currency%",
+                  payload.currency.charAt(0).toUpperCase() +
+                    payload.currency.slice(1)
+                )
+                .replace(
+                  "%domain%",
+                  responseDomainName.charAt(0).toUpperCase() +
+                    responseDomainName.slice(1)
+                );
               const moduleResponse = response.data[moduleBatchName] || false;
               if (!moduleBatchName || !moduleResponse) return rootState;
               if (window.debugLevel > 10) {
                 console.debug(
                   "api/batchData response",
                   moduleName,
+                  moduleBatchName,
                   moduleResponse
                 );
               }

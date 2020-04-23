@@ -47,12 +47,9 @@ export default {
         "cmsSettings",
         "cmsCurrencies",
         "cmsLocales",
-        "cmsRoutes",
-        "cmsPages",
-        "cmsSeoMeta",
-        "cmsSeoText",
-        "cmsBanners"
+        "cmsRoutes"
       ],
+      contentDataList: ["cmsPages", "cmsSeoMeta", "cmsSeoText", "cmsBanners"],
       profileDataList: ["player", "playerIpInfo", "playerSettings"]
     };
   },
@@ -72,6 +69,7 @@ export default {
       if (window.debugLevel > 1) {
         console.debug("App: initial data loaded", new Date(), data);
       }
+
       // Если пользователь авторизован, загружаем данные, относящиеся к его профилю
       if (this.isPlayerAuthorized) {
         if (window.debugLevel > 1) {
@@ -79,6 +77,9 @@ export default {
         }
         this.fetchProfileData();
       }
+
+      // Загружаем данные модулей контента
+      this.fetchContentData();
     });
 
     // Данные модулей профиля пользователя загружены
@@ -100,6 +101,9 @@ export default {
       this.$store
         .dispatch("api/batchData", { modules: this.initialDataList })
         .then(data => {
+          if (window.debugLevel > 2) {
+            console.debug("App: fetchInitialData loaded", data);
+          }
           this.$bus.emit("app-initial-data-loaded", data);
         });
     },
@@ -114,7 +118,27 @@ export default {
       this.$store
         .dispatch("api/batchData", { modules: this.profileDataList })
         .then(data => {
+          if (window.debugLevel > 2) {
+            console.debug("App: fetchProfileData loaded", data);
+          }
           this.$bus.emit("app-profile-data-loaded", data);
+        });
+    },
+    fetchContentData() {
+      if (window.debugLevel > 1) {
+        console.debug(
+          "App: fetchContentData",
+          new Date(),
+          this.contentDataList
+        );
+      }
+      this.$store
+        .dispatch("api/batchData", { modules: this.contentDataList })
+        .then(data => {
+          if (window.debugLevel > 2) {
+            console.debug("App: fetchContentData loaded", data);
+          }
+          this.$bus.emit("app-content-data-loaded", data);
         });
     }
   }

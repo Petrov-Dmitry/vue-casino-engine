@@ -49,7 +49,13 @@ export default {
         "cmsLocales",
         "cmsRoutes"
       ],
-      contentDataList: ["cmsPages", "cmsSeoMeta", "cmsSeoText", "cmsBanners"],
+      contentDataList: [
+        "cmsPages",
+        "cmsSeoMeta",
+        "cmsSeoText",
+        "cmsBanners",
+        "cmsTournaments"
+      ],
       profileDataList: ["player", "playerIpInfo", "playerSettings"]
     };
   },

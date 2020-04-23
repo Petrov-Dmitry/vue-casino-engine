@@ -22,8 +22,9 @@ export default {
       }
     },
     setData(state, payload) {
-      if (!payload || !payload.ip_info) return null;
-      state.data = Object.freeze(payload.ip_info);
+      if (!payload || !payload.ip_info)
+        throw new Error("playerIpInfo/setData needs to payload.ip_info");
+      state.data = payload.ip_info;
       if (window.debugLevel > 50) {
         console.debug("playerIpInfo/setData data", state.data);
       }

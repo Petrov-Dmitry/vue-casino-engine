@@ -22,8 +22,9 @@ export default {
       }
     },
     setData(state, payload) {
-      if (!payload || typeof payload !== "object") return null;
-      state.data = Object.freeze(payload);
+      if (!payload || typeof payload !== "object")
+        throw new Error("playerSettings/setData needs to payload object");
+      state.data = payload;
       if (window.debugLevel > 50) {
         console.debug("playerSettings/setData data", state.data);
       }

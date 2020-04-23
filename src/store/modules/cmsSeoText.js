@@ -23,8 +23,9 @@ export default {
       }
     },
     setData(state, payload) {
-      if (!payload || !payload.data) return null;
-      state.data = Object.freeze(payload.data);
+      if (!payload || !payload.data)
+        throw new Error("cmsSeoText/setData needs to payload.data");
+      state.data = payload.data;
       if (window.debugLevel > 50) {
         console.debug("cmsSeoText/setData data", state.data);
       }

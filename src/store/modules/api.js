@@ -47,14 +47,17 @@ export default {
       }
     },
     setLang(state, payload) {
-      if (!payload) payload = process.env.VUE_APP_DEFAULT_LANGUAGE;
+      if (!payload) payload = this.getters["api/getLangCode"];
       state.lang = payload;
       if (window.debugLevel > 10) {
         console.debug("api/setLang", state.lang);
       }
     },
     setPromiseStarted(state, payload) {
-      if (!payload || !payload.dataPromise) return;
+      if (!payload || !payload.dataPromise)
+        throw new Error(
+          "api/setPromiseStarted needs to payload.dataPromise value"
+        );
       if (!payload.value) payload.value = false;
       state.dataPromiseLoading[payload.dataPromise] = payload.value;
       if (window.debugLevel > 10) {
@@ -66,7 +69,8 @@ export default {
       }
     },
     setDataLoading(state, payload) {
-      if (!payload || !payload.moduleName) return;
+      if (!payload || !payload.moduleName)
+        throw new Error("api/setDataLoading needs to payload.moduleName value");
       if (!payload.value) payload.value = false;
       state.isDataLoading[payload.moduleName] = payload.value;
       if (window.debugLevel > 10) {
@@ -87,9 +91,7 @@ export default {
         !Array.isArray(payload.modules) ||
         !payload.modules.length
       ) {
-        throw new Error(
-          "List of modules should be passed to create batch query"
-        );
+        throw new Error("api/batchData needs to payload.modules array");
       }
       // Устанавливаем язык, валюту и домен запросов
       if (!payload.lang) payload.lang = getters.getLangCode;

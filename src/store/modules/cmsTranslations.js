@@ -27,7 +27,8 @@ export default {
       }
     },
     setData(state, payload) {
-      if (!payload || typeof payload !== "object") return null;
+      if (!payload || typeof payload !== "object")
+        throw new Error("cmsTournaments/setData needs to payload object");
       const data = {};
       data[state.lang] = payload;
       state.data = {

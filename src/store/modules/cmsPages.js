@@ -26,14 +26,18 @@ export default {
       }
     },
     setData(state, payload) {
-      if (!payload || !payload.data) return null;
-      state.data = Object.freeze(payload.data);
+      if (!payload || !payload.data)
+        throw new Error("cmsPages/setData needs to payload.data");
+      state.data = payload.data;
       if (window.debugLevel > 50) {
         console.debug("cmsPages/setData data", state.data);
       }
     },
     setExtendedDataLoading(state, payload = true) {
-      if (!payload.code) return;
+      if (!payload.code)
+        throw new Error(
+          "cmsPages/setExtendedDataLoading needs to payload.code"
+        );
       if (!payload.status) payload.status = false;
       state.isExtendedDataLoading[payload.code] = payload.status;
       if (window.debugLevel > 10) {
@@ -45,7 +49,8 @@ export default {
       }
     },
     setExtendedData(state, payload) {
-      if (!payload || !payload.code) return;
+      if (!payload || !payload.code)
+        throw new Error("cmsPages/setExtendedData needs to payload.code");
       state.extendedData[payload.code] = payload;
       if (window.debugLevel > 10) {
         console.debug(
@@ -60,13 +65,7 @@ export default {
     fetchData({ state, rootState, commit }, payload = {}) {
       if (!payload.forced) payload.forced = false;
       // Устанавливаем язык запросов
-      if (!payload.lang)
-        payload.lang =
-          (rootState.player &&
-            rootState.player.data &&
-            rootState.player.data.language) ||
-          window.LANG_CODE ||
-          process.env.VUE_APP_DEFAULT_LANGUAGE;
+      if (!payload.lang) payload.lang = this.getters["api/getLangCode"];
       if (window.debugLevel > 10) {
         console.debug("cmsPages/fetchData", payload, state.data);
       }
@@ -136,16 +135,11 @@ export default {
       });
     },
     fetchExtendedData({ commit, state, rootState }, payload = {}) {
-      if (!payload.code) return false;
+      if (!payload.code)
+        throw new Error("cmsPages/fetchExtendedData needs to payload.code");
       if (!payload.forced) payload.forced = false;
       // Устанавливаем язык запросов
-      if (!payload.lang)
-        payload.lang =
-          (rootState.player &&
-            rootState.player.data &&
-            rootState.player.data.language) ||
-          window.LANG_CODE ||
-          process.env.VUE_APP_DEFAULT_LANGUAGE;
+      if (!payload.lang) payload.lang = this.getters["api/getLangCode"];
       if (window.debugLevel > 10) {
         console.debug(
           "cmsPages/fetchExtendedData",

@@ -22,7 +22,8 @@ export default {
       }
     },
     setData(state, payload) {
-      if (!payload || typeof payload !== "object") return null;
+      if (!payload || typeof payload !== "object")
+        throw new Error("cmsSeoText/setData needs to payload object");
       if (window.debugLevel > 10) {
         console.debug("cmsSettings/setData", state.data, payload);
       }

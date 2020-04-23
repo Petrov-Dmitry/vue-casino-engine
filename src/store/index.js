@@ -20,6 +20,7 @@ import cmsPages from "./modules/cmsPages";
 import cmsSeoMeta from "./modules/cmsSeoMeta";
 import cmsSeoText from "./modules/cmsSeoText";
 import cmsBanners from "./modules/cmsBanners";
+import cmsTournaments from "./modules/cmsTournaments";
 // Загружаем модули в store
 const modules = {
   api,
@@ -34,7 +35,8 @@ const modules = {
   cmsPages,
   cmsSeoMeta,
   cmsSeoText,
-  cmsBanners
+  cmsBanners,
+  cmsTournaments
 };
 // Загружаем плагины vuex
 const plugins = [];

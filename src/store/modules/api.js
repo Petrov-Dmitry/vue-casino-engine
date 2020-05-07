@@ -283,6 +283,189 @@ export default {
           });
       });
       return state.dataPromise[batchHash];
+    },
+    batchExtendedData({ state, rootState, getters, commit }, payload = {}) {
+      // Устанавливаем язык, валюту и домен запросов
+      if (!payload.lang) payload.lang = getters.getLangCode;
+      if (!payload.currency) payload.currency = getters.getCurrencyCode;
+      if (!payload.domain) payload.domain = window.location.hostname;
+      if (window.debugLevel > 10) {
+        console.debug("api/batchExtendedData", payload);
+      }
+
+      // Получаем хэш списка запрашиваемых модулей
+      const batchHash = "extendedData";
+      // Возвращаем промис если данные уже грузятся
+      if (
+        state.dataPromise[batchHash] &&
+        state.dataPromiseLoading[batchHash] &&
+        Date.now() - new Date(state.dataPromiseLoading[batchHash]).getTime() <
+          parseInt(process.env.VUE_APP_API_TIMEOUT)
+      ) {
+        if (window.debugLevel > 10) {
+          console.debug(
+            "api/batchData already in progress...",
+            batchHash,
+            state.dataPromiseLoading[batchHash]
+          );
+        }
+        return state.dataPromise[batchHash];
+      }
+
+      state.dataPromise[batchHash] = new Promise((resolve, reject) => {
+        const queriesList = [];
+
+        // Добавляем запросы данных турниров
+        if (
+          rootState.cmsTournaments.data &&
+          Array.isArray(rootState.cmsTournaments.data) &&
+          rootState.cmsTournaments.data.length
+        ) {
+          if (window.debugLevel > 10) {
+            console.debug(
+              "api/batchExtendedData cmsTournaments",
+              rootState.cmsTournaments.data,
+              rootState.cmsTournaments
+            );
+          }
+          // Для каждого из турниров
+          rootState.cmsTournaments.data.forEach(item => {
+            // Проверяем наличие и актуальность кэша extendedData
+            if (rootState.cmsTournaments.extendedData[item.id]) {
+              if (window.debugLevel > 20) {
+                console.debug(
+                  "api/batchExtendedData tournament.extendedData loaded from cache",
+                  item.id,
+                  item
+                );
+              }
+              return resolve(rootState);
+            }
+            // Если extendedData турнира не заполнен, добавляем запрос в queriesList
+            const tournamentExtendedUrl =
+              rootState.cmsTournaments.api +
+              "[]=" +
+              rootState.cmsTournaments.route.replace(
+                "%lang%",
+                `${item.id}/${payload.lang}`
+              );
+            if (window.debugLevel > 20) {
+              console.debug(
+                "api/batchExtendedData tournament.extendedData request",
+                tournamentExtendedUrl
+              );
+            }
+            queriesList.push(tournamentExtendedUrl);
+
+            // Проверяем наличие и актуальность кэша topPlayersData
+            if (rootState.cmsTournaments.topPlayersData[item.id]) {
+              if (window.debugLevel > 20) {
+                console.debug(
+                  "api/batchExtendedData tournament.topPlayersData loaded from cache",
+                  item.id,
+                  item
+                );
+              }
+              return resolve(rootState);
+            }
+            // Если topPlayersData турнира не заполнен, добавляем запрос в queriesList
+            const tournamentTopPlayersUrl =
+              rootState.cmsTournaments.api +
+              "[]=" +
+              rootState.cmsTournaments.routeTopPlayers +
+              "/" +
+              item.id;
+            if (window.debugLevel > 20) {
+              console.debug(
+                "api/batchExtendedData tournament.topPlayersData request",
+                tournamentTopPlayersUrl
+              );
+            }
+            queriesList.push(tournamentTopPlayersUrl);
+          });
+          if (window.debugLevel > 10) {
+            console.debug("api/batchExtendedData queriesList", queriesList);
+          }
+          // Строим запрос к API
+          let requestUrl =
+            rootState.api.apiPath +
+            rootState.api.batchPath +
+            queriesList.join("&") +
+            "&requestUUID=" +
+            this._vm.$uuid.v1();
+          if (window.debugLevel > 10) {
+            console.debug("api/batchExtendedData requestUrl", requestUrl);
+          }
+          // Запрашиваем данные из API
+          axios
+            .get(requestUrl)
+            .then(response => {
+              if (!response.data) {
+                throw new Error("api/batchData response has no data");
+              }
+              if (window.debugLevel > 10) {
+                console.debug("api/batchData response", response);
+              }
+              // Получаем данные модулей
+              queriesList.forEach(moduleName => {
+                const module = rootState[moduleName] || false;
+                if (!module) return;
+                // Определяем имя модуля в ответе
+                const responseDomainName = window.location.hostname.replace(
+                  /[^a-z0-9]/g,
+                  ""
+                );
+                const moduleBatchName = module.batchObjectName
+                  .replace(
+                    "%lang%",
+                    payload.lang.charAt(0).toUpperCase() + payload.lang.slice(1)
+                  )
+                  .replace(
+                    "%currency%",
+                    payload.currency.charAt(0).toUpperCase() +
+                      payload.currency.slice(1)
+                  )
+                  .replace(
+                    "%domain%",
+                    responseDomainName.charAt(0).toUpperCase() +
+                      responseDomainName.slice(1)
+                  );
+                const moduleResponse = response.data[moduleBatchName] || false;
+                if (!moduleBatchName || !moduleResponse) return rootState;
+                if (window.debugLevel > 10) {
+                  console.debug(
+                    "api/batchData response",
+                    moduleName,
+                    moduleBatchName,
+                    moduleResponse
+                  );
+                }
+                commit("setDataLoading", { moduleName: moduleName });
+                rootState[moduleName].isDataLoaded = new Date();
+                commit(moduleName + "/setData", moduleResponse, { root: true });
+                if (window.debugLevel > 10) {
+                  console.debug(
+                    "api/batchData",
+                    moduleName,
+                    "loaded from API",
+                    rootState[moduleName]
+                  );
+                }
+              });
+              resolve(rootState);
+            })
+            .catch(error => {
+              console.error(error);
+              reject(error.response);
+            })
+            .finally(() => {
+              state.dataPromise[batchHash] = null;
+              commit("setPromiseStarted", {
+                dataPromise: batchHash
+              });
+            });
+        }
+      });
     }
   }
 };

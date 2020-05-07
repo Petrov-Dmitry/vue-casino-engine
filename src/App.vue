@@ -94,6 +94,15 @@ export default {
         console.debug("App: profile data loaded", new Date(), data);
       }
     });
+
+    // Данные модулей контента загружены
+    this.$bus.on("app-content-data-loaded", data => {
+      if (window.debugLevel > 1) {
+        console.debug("App: content data loaded", new Date(), data);
+      }
+      // Загружаем дополнительные данные модулей контента
+      this.fetchExtendedData();
+    });
   },
   methods: {
     fetchInitialData() {
@@ -146,6 +155,21 @@ export default {
           }
           this.$bus.emit("app-content-data-loaded", data);
         });
+    },
+    fetchExtendedData() {
+      if (window.debugLevel > 1) {
+        console.debug(
+          "App: fetchExtendedData",
+          new Date(),
+          this.contentDataList
+        );
+      }
+      this.$store.dispatch("api/batchExtendedData").then(data => {
+        if (window.debugLevel > 2) {
+          console.debug("App: fetchExtendedData loaded", data);
+        }
+        this.$bus.emit("app-extended-data-loaded", data);
+      });
     }
   }
 };
